@@ -40,7 +40,7 @@ Ajoutez de la stratégie et du fun avec des "boosts" que les joueurs peuvent uti
 ### Instructions
 1. Clonez ce dépôt :
    ```bash
-   git clone https://github.com/Virgile-Broillet/LIFPROJET.git
+   git clone https://github.com/Virgile-Broillet/LIFPROJET
    ```
 2. Ouvrez le projet dans Unity.
 3. Importez les dépendances si demandé (Unity Package Manager).
