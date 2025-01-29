@@ -11,6 +11,12 @@ public class PawnController : MonoBehaviour
 
     private void Update()
     {
+        // Si le pion est sélectionné et que ce n'est pas son tour, on le désélectionne
+        if (isSelected && isPlayerWhite != GameManager.IsWhiteTurn)
+        {
+            isSelected = false;
+        }
+
         // Si le pion est sélectionné, on permet de le déplacer
         if (isSelected && !isMoving)
         {
@@ -24,7 +30,7 @@ public class PawnController : MonoBehaviour
         }
     }
 
-    // Gère le clic souris pour déplacer le pion
+    // Gère le clic souris pour sélectionner et déplacer le pion
     void HandleMouseClick()
     {
         if (Input.GetMouseButtonDown(0)) // Si clic gauche
@@ -35,23 +41,16 @@ public class PawnController : MonoBehaviour
             // Lancer un raycast depuis la position de la souris
             if (Physics.Raycast(ray, out hit))
             {
-                // Vérifie si on clique sur une case ("Tiles")
+                // Si on clique sur une case valide ("Tiles")
                 if (hit.collider.CompareTag("Tiles"))
                 {
                     Vector3 hitPosition = hit.collider.transform.position;
 
-                    // Vérifie si la case est une case valide (1 case ou 2 cases au premier mouvement)
+                    // Vérifie si la case est une case valide
                     if (IsValidMove(hitPosition))
                     {
                         targetPosition = hitPosition; // Met à jour la position cible
                         isMoving = true; // Active le mouvement
-
-                        // Désactive le premier mouvement après le déplacement
-                        if (isFirstMove)
-                            isFirstMove = false;
-
-                        // Une fois le pion déplacé, passer au joueur suivant
-                        GameManager.SwitchTurn();
                     }
                     else
                     {
@@ -62,52 +61,73 @@ public class PawnController : MonoBehaviour
         }
     }
 
-    // Vérifie si le déplacement est valide
     bool IsValidMove(Vector3 hitPosition)
+{
+    Vector3 currentPosition = transform.position;
+
+    // Convertir en entiers pour éviter les imprécisions
+    int currentX = Mathf.RoundToInt(currentPosition.x);
+    int currentZ = Mathf.RoundToInt(currentPosition.z);
+    int targetX = Mathf.RoundToInt(hitPosition.x);
+    int targetZ = Mathf.RoundToInt(hitPosition.z);
+
+    // Calculer les distances
+    int distanceX = Mathf.Abs(targetX - currentX);
+    int distanceZ = targetZ - currentZ; // Peut être positif (blanc) ou négatif (noir)
+
+    // Debugging pour voir les valeurs exactes
+    Debug.Log($"Vérification déplacement de {gameObject.name} : ({currentX}, {currentZ}) → ({targetX}, {targetZ})");
+    Debug.Log($"DistanceX: {distanceX}, DistanceZ: {distanceZ}, isFirstMove: {isFirstMove}");
+
+    // Vérifier un mouvement de 2 cases en avant si c'est le premier déplacement
+    if (isFirstMove && distanceX == 0 && distanceZ == (isPlayerWhite ? 2 : -2))
     {
-        Vector3 currentPosition = transform.position;
-
-        // Calcul de la distance entre la position actuelle et la position cible
-        float distanceX = Mathf.Abs(hitPosition.x - currentPosition.x);
-        float distanceZ = hitPosition.z - currentPosition.z; // Direction "avant" seulement
-
-        // Vérifie si la cible est à 1 case devant le pion
-        if (distanceX == 0 && distanceZ == (isPlayerWhite ? 1 : -1)) // 1 case en avant
-        {
-            return true;
-        }
-
-        // Vérifie si le pion peut avancer de 2 cases au premier mouvement
-        if (isFirstMove && distanceX == 0 && distanceZ == (isPlayerWhite ? 2 : -2)) // 2 cases en avant pour le premier tour
-        {
-            return true;
-        }
-
-        // Si aucune condition n'est remplie, le mouvement est invalide
-        return false;
+        isFirstMove = false;
+        return true;
+    }else if (distanceX == 0 && distanceZ == (isPlayerWhite ? 1 : -1)) // Vérifier un mouvement de 1 case en avant
+    {
+        isFirstMove = false;
+        return true;
     }
+
+    // Déplacement invalide
+    return false;
+}
 
     // Déplace le pion vers la position cible
     void MovePawn()
-    {
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+{
+    transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
 
-        // Si le pion atteint la position cible, arrêter le mouvement
-        if (Vector3.Distance(transform.position, targetPosition) < 0.01f)
+    // Si le pion atteint la position cible, arrêter le mouvement
+    if (Vector3.Distance(transform.position, targetPosition) < 0.01f)
+    {
+        isMoving = false;
+        Debug.Log(gameObject.name + " a atteint sa destination.");
+
+        // Désactiver le premier mouvement uniquement si le pion a avancé de 2 cases
+        if (Mathf.Abs(targetPosition.z - transform.position.z) == 2)
         {
-            isMoving = false;
-            Debug.Log(gameObject.name + " a atteint sa destination.");
+            isFirstMove = false;
         }
+
+        // Désélectionner le pion après déplacement
+        isSelected = false;
+
+        // Changer de tour après un déplacement réussi
+        GameManager.SwitchTurn();
     }
+}
+
 
     // Méthode appelée lors du clic sur le pion
     public void OnPawnClicked()
     {
-        // Vérifie si c'est le tour du joueur auquel appartient ce pion
+        // Vérifie si c'est le tour du joueur
         if (isPlayerWhite != GameManager.IsWhiteTurn)
         {
             Debug.Log("Ce n'est pas le tour de ce joueur !");
-            return; // Ne rien faire si ce n'est pas le tour du joueur
+            return; // Ne pas autoriser la sélection
         }
 
         isSelected = !isSelected; // Alterner l'état sélectionné

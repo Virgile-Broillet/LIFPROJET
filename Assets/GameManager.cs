@@ -2,12 +2,11 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public static bool IsWhiteTurn = true; // Indique si c'est le tour du joueur blanc
+    public static bool IsWhiteTurn = true; // Tour des Blancs commence
 
-    // Change le tour du joueur
     public static void SwitchTurn()
     {
-        IsWhiteTurn = !IsWhiteTurn; // Alterne entre les tours
-        Debug.Log(IsWhiteTurn ? "C'est le tour des Blancs." : "C'est le tour des Noirs.");
+        IsWhiteTurn = !IsWhiteTurn; // Alterner le tour
+        Debug.Log(IsWhiteTurn ? "Tour des Blancs." : "Tour des Noirs.");
     }
 }
