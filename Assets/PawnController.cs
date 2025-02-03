@@ -70,7 +70,7 @@ public class PawnController : PieceController
         int currentX = Mathf.RoundToInt(currentPosition.x);
         int currentZ = Mathf.RoundToInt(currentPosition.z);
         int targetX = Mathf.RoundToInt(hitPosition.x);
-        int targetZ = Mathf.RoundToInt(hitPosition.z);
+        int targetZ = targetZ = Mathf.RoundToInt(hitPosition.z); // Z ajusté pour direction
 
         // Calcul des distances
         int distanceX = Mathf.Abs(targetX - currentX);
@@ -91,16 +91,14 @@ public class PawnController : PieceController
         // Capture en diagonale
         if (distanceX == 1 && distanceZ == (isPlayerWhite ? 1 : -1))
         {
-            // Vérifier s'il y a une pièce adverse sur la case cible
+            // Vérifier s'il y a une pièce ennemie sur la case cible (n'importe quelle pièce ennemie)
             Collider[] colliders = Physics.OverlapSphere(hitPosition, 0.1f);
             foreach (Collider collider in colliders)
             {
-                PawnController otherPawn = collider.GetComponent<PawnController>();
-                if (otherPawn != null && otherPawn.isPlayerWhite != isPlayerWhite)
+                PieceController piece = collider.GetComponent<PieceController>();
+                if (piece != null && piece.isPlayerWhite != this.isPlayerWhite) // Pièce ennemie
                 {
-                    // Stocke le pion adverse pour le supprimer plus tard
-                    capturedPawn = otherPawn;
-                    return true;
+                    return true; // La capture est possible
                 }
             }
         }
@@ -108,10 +106,6 @@ public class PawnController : PieceController
         return false; // Mouvement invalide
     }
 
-    // Ajouter une variable pour stocker la pièce capturée temporairement
-    private PawnController capturedPawn = null;
-
-    
     // Déplace le pion vers la position cible
     void MovePawn()
     {
@@ -123,16 +117,22 @@ public class PawnController : PieceController
             isMoving = false;
             Debug.Log(gameObject.name + " a atteint sa destination.");
 
-            // Si un pion a été capturé, le supprimer
-            if (capturedPawn != null)
+            // Capturer la pièce ennemie si présente
+            Collider[] colliders = Physics.OverlapSphere(targetPosition, 0.1f);
+            foreach (Collider collider in colliders)
             {
-                Destroy(capturedPawn.gameObject);
-                capturedPawn = null; // Réinitialiser la capture
+                PieceController piece = collider.GetComponent<PieceController>();
+                if (piece != null && piece.isPlayerWhite != this.isPlayerWhite) // Pièce ennemie
+                {
+                    // Détruire la pièce ennemie
+                    Destroy(piece.gameObject);
+                    Debug.Log("Pièce ennemie capturée.");
+                }
             }
+
             DeselectPawn();
         }
     }
-
 
     // Méthode appelée lors du clic sur le pion
     public void OnPawnClicked()
