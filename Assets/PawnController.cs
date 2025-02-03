@@ -64,53 +64,55 @@ public class PawnController : MonoBehaviour
 
     // Vérifie si le déplacement est valide
     bool IsValidMove(Vector3 hitPosition)
-{
-    Vector3 currentPosition = transform.position;
-
-    // Convertir en entiers pour éviter les imprécisions
-    int currentX = Mathf.RoundToInt(currentPosition.x);
-    int currentZ = Mathf.RoundToInt(currentPosition.z);
-    int targetX = Mathf.RoundToInt(hitPosition.x);
-    int targetZ = Mathf.RoundToInt(hitPosition.z);
-
-    // Calcul des distances
-    int distanceX = Mathf.Abs(targetX - currentX);
-    int distanceZ = targetZ - currentZ; // Avant = positif pour blanc, négatif pour noir
-
-    // Déplacement normal en avant (1 case)
-    if (distanceX == 0 && distanceZ == (isPlayerWhite ? 1 : -1))
     {
-        return true;
-    }
+        Vector3 currentPosition = transform.position;
 
-    // Premier déplacement (2 cases en avant)
-    if (isFirstMove && distanceX == 0 && distanceZ == (isPlayerWhite ? 2 : -2))
-    {
-        return true;
-    }
+        // Convertir en entiers pour éviter les imprécisions
+        int currentX = Mathf.RoundToInt(currentPosition.x);
+        int currentZ = Mathf.RoundToInt(currentPosition.z);
+        int targetX = Mathf.RoundToInt(hitPosition.x);
+        int targetZ = Mathf.RoundToInt(hitPosition.z);
 
-    // Capture en diagonale
-    if (distanceX == 1 && distanceZ == (isPlayerWhite ? 1 : -1))
-    {
-        // Vérifier s'il y a une pièce adverse sur la case cible
-        Collider[] colliders = Physics.OverlapSphere(hitPosition, 0.1f);
-        foreach (Collider collider in colliders)
+        // Calcul des distances
+        int distanceX = Mathf.Abs(targetX - currentX);
+        int distanceZ = targetZ - currentZ; // Avant = positif pour blanc, négatif pour noir
+
+        // Déplacement normal en avant (1 case)
+        if (distanceX == 0 && distanceZ == (isPlayerWhite ? 1 : -1))
         {
-            PawnController otherPawn = collider.GetComponent<PawnController>();
-            if (otherPawn != null && otherPawn.isPlayerWhite != isPlayerWhite)
+            return true;
+        }
+
+        // Premier déplacement (2 cases en avant)
+        if (isFirstMove && distanceX == 0 && distanceZ == (isPlayerWhite ? 2 : -2))
+        {
+            return true;
+        }
+
+        // Capture en diagonale
+        if (distanceX == 1 && distanceZ == (isPlayerWhite ? 1 : -1))
+        {
+            // Vérifier s'il y a une pièce adverse sur la case cible
+            Collider[] colliders = Physics.OverlapSphere(hitPosition, 0.1f);
+            foreach (Collider collider in colliders)
             {
-                // Stocke le pion adverse pour le supprimer plus tard
-                capturedPawn = otherPawn;
-                return true;
+                PawnController otherPawn = collider.GetComponent<PawnController>();
+                if (otherPawn != null && otherPawn.isPlayerWhite != isPlayerWhite)
+                {
+                    // Stocke le pion adverse pour le supprimer plus tard
+                    capturedPawn = otherPawn;
+                    return true;
+                }
             }
         }
+
+        return false; // Mouvement invalide
     }
 
-    return false; // Mouvement invalide
-}
+    // Ajouter une variable pour stocker la pièce capturée temporairement
+    private PawnController capturedPawn = null;
 
-// Ajouter une variable pour stocker la pièce capturée temporairement
-private PawnController capturedPawn = null;
+    
     // Déplace le pion vers la position cible
     void MovePawn()
     {
