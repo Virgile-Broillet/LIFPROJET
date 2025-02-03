@@ -129,8 +129,8 @@ public class PawnController : MonoBehaviour
             {
                 Destroy(capturedPawn.gameObject);
                 capturedPawn = null; // Réinitialiser la capture
-                return;
             }
+            DeselectPawn();
         }
     }
 
