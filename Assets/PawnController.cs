@@ -123,14 +123,17 @@ public class PawnController : MonoBehaviour
         {
             isMoving = false;
             Debug.Log(gameObject.name + " a atteint sa destination.");
+
+            // Si un pion a été capturé, le supprimer
             if (capturedPawn != null)
             {
                 Destroy(capturedPawn.gameObject);
                 capturedPawn = null; // Réinitialiser la capture
-                GameManager.SwitchTurn();
+                return;
             }
         }
     }
+
 
     // Méthode appelée lors du clic sur le pion
     public void OnPawnClicked()
