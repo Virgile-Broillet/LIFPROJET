@@ -1,9 +1,8 @@
 using UnityEngine;
 
-public class PawnController : MonoBehaviour
+public class PawnController : PieceController
 {
     public float moveSpeed = 5f; // Vitesse de déplacement
-    public bool isPlayerWhite = true; // Détermine si ce pion appartient au joueur blanc
     private bool isSelected = false; // État de sélection
     private Vector3 targetPosition; // Position de destination
     private bool isMoving = false; // Si le pion est en train de se déplacer
