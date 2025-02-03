@@ -11,12 +11,6 @@ public class PawnController : MonoBehaviour
 
     private void Update()
     {
-        // Si le pion est sélectionné et que ce n'est pas son tour, on le désélectionne
-        if (isSelected && isPlayerWhite != GameManager.IsWhiteTurn)
-        {
-            isSelected = false;
-        }
-
         // Si le pion est sélectionné, on permet de le déplacer
         if (isSelected && !isMoving)
         {
@@ -30,7 +24,7 @@ public class PawnController : MonoBehaviour
         }
     }
 
-    // Gère le clic souris pour sélectionner et déplacer le pion
+    // Gère le clic souris pour déplacer le pion
     void HandleMouseClick()
     {
         if (Input.GetMouseButtonDown(0)) // Si clic gauche
@@ -41,16 +35,23 @@ public class PawnController : MonoBehaviour
             // Lancer un raycast depuis la position de la souris
             if (Physics.Raycast(ray, out hit))
             {
-                // Si on clique sur une case valide ("Tiles")
+                // Vérifie si on clique sur une case ("Tiles")
                 if (hit.collider.CompareTag("Tiles"))
                 {
                     Vector3 hitPosition = hit.collider.transform.position;
 
-                    // Vérifie si la case est une case valide
+                    // Vérifie si la case est une case valide (1 case ou 2 cases au premier mouvement)
                     if (IsValidMove(hitPosition))
                     {
                         targetPosition = hitPosition; // Met à jour la position cible
                         isMoving = true; // Active le mouvement
+
+                        // Désactive le premier mouvement après le déplacement
+                        if (isFirstMove)
+                            isFirstMove = false;
+
+                        // Une fois le pion déplacé, passer au joueur suivant
+                        GameManager.SwitchTurn();
                     }
                     else
                     {
@@ -61,6 +62,7 @@ public class PawnController : MonoBehaviour
         }
     }
 
+    // Vérifie si le déplacement est valide
     bool IsValidMove(Vector3 hitPosition)
 {
     Vector3 currentPosition = transform.position;
@@ -71,63 +73,71 @@ public class PawnController : MonoBehaviour
     int targetX = Mathf.RoundToInt(hitPosition.x);
     int targetZ = Mathf.RoundToInt(hitPosition.z);
 
-    // Calculer les distances
+    // Calcul des distances
     int distanceX = Mathf.Abs(targetX - currentX);
-    int distanceZ = targetZ - currentZ; // Peut être positif (blanc) ou négatif (noir)
+    int distanceZ = targetZ - currentZ; // Avant = positif pour blanc, négatif pour noir
 
-    // Debugging pour voir les valeurs exactes
-    Debug.Log($"Vérification déplacement de {gameObject.name} : ({currentX}, {currentZ}) → ({targetX}, {targetZ})");
-    Debug.Log($"DistanceX: {distanceX}, DistanceZ: {distanceZ}, isFirstMove: {isFirstMove}");
+    // Déplacement normal en avant (1 case)
+    if (distanceX == 0 && distanceZ == (isPlayerWhite ? 1 : -1))
+    {
+        return true;
+    }
 
-    // Vérifier un mouvement de 2 cases en avant si c'est le premier déplacement
+    // Premier déplacement (2 cases en avant)
     if (isFirstMove && distanceX == 0 && distanceZ == (isPlayerWhite ? 2 : -2))
     {
-        isFirstMove = false;
-        return true;
-    }else if (distanceX == 0 && distanceZ == (isPlayerWhite ? 1 : -1)) // Vérifier un mouvement de 1 case en avant
-    {
-        isFirstMove = false;
         return true;
     }
 
-    // Déplacement invalide
-    return false;
+    // Capture en diagonale
+    if (distanceX == 1 && distanceZ == (isPlayerWhite ? 1 : -1))
+    {
+        // Vérifier s'il y a une pièce adverse sur la case cible
+        Collider[] colliders = Physics.OverlapSphere(hitPosition, 0.1f);
+        foreach (Collider collider in colliders)
+        {
+            PawnController otherPawn = collider.GetComponent<PawnController>();
+            if (otherPawn != null && otherPawn.isPlayerWhite != isPlayerWhite)
+            {
+                // Stocke le pion adverse pour le supprimer plus tard
+                capturedPawn = otherPawn;
+                return true;
+            }
+        }
+    }
+
+    return false; // Mouvement invalide
 }
 
+// Ajouter une variable pour stocker la pièce capturée temporairement
+private PawnController capturedPawn = null;
     // Déplace le pion vers la position cible
     void MovePawn()
-{
-    transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-
-    // Si le pion atteint la position cible, arrêter le mouvement
-    if (Vector3.Distance(transform.position, targetPosition) < 0.01f)
     {
-        isMoving = false;
-        Debug.Log(gameObject.name + " a atteint sa destination.");
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
 
-        // Désactiver le premier mouvement uniquement si le pion a avancé de 2 cases
-        if (Mathf.Abs(targetPosition.z - transform.position.z) == 2)
+        // Si le pion atteint la position cible, arrêter le mouvement
+        if (Vector3.Distance(transform.position, targetPosition) < 0.01f)
         {
-            isFirstMove = false;
+            isMoving = false;
+            Debug.Log(gameObject.name + " a atteint sa destination.");
+            if (capturedPawn != null)
+            {
+                Destroy(capturedPawn.gameObject);
+                capturedPawn = null; // Réinitialiser la capture
+                GameManager.SwitchTurn();
+            }
         }
-
-        // Désélectionner le pion après déplacement
-        isSelected = false;
-
-        // Changer de tour après un déplacement réussi
-        GameManager.SwitchTurn();
     }
-}
-
 
     // Méthode appelée lors du clic sur le pion
     public void OnPawnClicked()
     {
-        // Vérifie si c'est le tour du joueur
+        // Vérifie si c'est le tour du joueur auquel appartient ce pion
         if (isPlayerWhite != GameManager.IsWhiteTurn)
         {
             Debug.Log("Ce n'est pas le tour de ce joueur !");
-            return; // Ne pas autoriser la sélection
+            return; // Ne rien faire si ce n'est pas le tour du joueur
         }
 
         isSelected = !isSelected; // Alterner l'état sélectionné
