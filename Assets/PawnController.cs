@@ -153,5 +153,6 @@ public class PawnController : PieceController
     {
         isSelected = false;
         Debug.Log(gameObject.name + " a été désélectionné.");
+        Debug.Log("coucou")
     }
 }
