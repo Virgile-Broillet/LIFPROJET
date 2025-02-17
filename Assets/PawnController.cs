@@ -7,6 +7,8 @@ public class PawnController : PieceController
     private Vector3 targetPosition; // Position de destination
     private bool isMoving = false; // Si le pion est en train de se déplacer
     private bool isFirstMove = true; // Premier déplacement du pion
+    private PieceController pieceToCapture = null; // Stocke la pièce ennemie à capturer
+
 
     private void Update()
     {
@@ -48,9 +50,6 @@ public class PawnController : PieceController
                         // Désactive le premier mouvement après le déplacement
                         if (isFirstMove)
                             isFirstMove = false;
-
-                        // Une fois le pion déplacé, passer au joueur suivant
-                        GameManager.SwitchTurn();
                     }
                     else
                     {
@@ -61,78 +60,196 @@ public class PawnController : PieceController
         }
     }
 
-    // Vérifie si le déplacement est valide
     bool IsValidMove(Vector3 hitPosition)
     {
         Vector3 currentPosition = transform.position;
 
-        // Convertir en entiers pour éviter les imprécisions
         int currentX = Mathf.RoundToInt(currentPosition.x);
         int currentZ = Mathf.RoundToInt(currentPosition.z);
         int targetX = Mathf.RoundToInt(hitPosition.x);
-        int targetZ = targetZ = Mathf.RoundToInt(hitPosition.z); // Z ajusté pour direction
+        int targetZ = Mathf.RoundToInt(hitPosition.z);
 
-        // Calcul des distances
         int distanceX = Mathf.Abs(targetX - currentX);
-        int distanceZ = targetZ - currentZ; // Avant = positif pour blanc, négatif pour noir
+        int distanceZ = targetZ - currentZ; // Direction avant ou arrière en fonction du joueur
 
-        // Déplacement normal en avant (1 case)
+        // Vérifie le déplacement standard de 1 case
         if (distanceX == 0 && distanceZ == (isPlayerWhite ? 1 : -1))
         {
-            return true;
+            // Vérifie si la case est libre et le chemin est dégagé
+            if (IsPathClear(currentPosition, hitPosition))
+            {
+                isFirstMove = false;
+                return true;
+            }
+            else
+            {
+                Debug.Log("La case de destination est occupée.");
+            }
         }
 
-        // Premier déplacement (2 cases en avant)
+        // Vérifie le premier mouvement (2 cases)
         if (isFirstMove && distanceX == 0 && distanceZ == (isPlayerWhite ? 2 : -2))
         {
-            return true;
+            if (IsPathClear(currentPosition, hitPosition))
+            {
+                isFirstMove = false;
+                return true;
+            }
+            else
+            {
+                Debug.Log("Le chemin pour le premier déplacement est bloqué.");
+            }
         }
 
-        // Capture en diagonale
+        // Vérification pour une capture (mouvement diagonal de 1 case)
         if (distanceX == 1 && distanceZ == (isPlayerWhite ? 1 : -1))
         {
-            // Vérifier s'il y a une pièce ennemie sur la case cible (n'importe quelle pièce ennemie)
-            Collider[] colliders = Physics.OverlapSphere(hitPosition, 0.1f);
+            Collider[] colliders = Physics.OverlapSphere(hitPosition, 0.3f);
             foreach (Collider collider in colliders)
             {
                 PieceController piece = collider.GetComponent<PieceController>();
-                if (piece != null && piece.isPlayerWhite != this.isPlayerWhite) // Pièce ennemie
+                if (piece != null && piece.isPlayerWhite != this.isPlayerWhite) 
                 {
-                    return true; // La capture est possible
+                    pieceToCapture = piece;
+                    return true; // Permet la capture
                 }
             }
         }
 
-        return false; // Mouvement invalide
+        Debug.Log("Déplacement impossible");
+        return false;
     }
+
+
+     // Vérifie si la case de destination est libre
+    bool IsDestinationFree(Vector3 targetPosition)
+    {
+        // Vérifie si la case de destination est occupée par une pièce de la même couleur
+        Collider[] colliders = Physics.OverlapSphere(targetPosition, 0.1f);
+        foreach (Collider collider in colliders)
+        {
+            PieceController piece = collider.GetComponent<PieceController>();
+            if (piece != null && piece.isPlayerWhite == this.isPlayerWhite)
+            {
+                return false; // Il y a une pièce alliée sur la case
+            }
+        }
+        return true; // La case est libre
+    }
+
+    // Vérifie si le chemin entre la position actuelle et la position cible est dégagé
+    bool IsPathClear(Vector3 currentPosition, Vector3 targetPosition)
+    {
+        if (!isFirstMove)
+        {
+            // Vérifie si le déplacement est strictement vertical (Z change mais X reste le même)
+            if (currentPosition.x == targetPosition.x)
+            {
+                // Détermine la direction du mouvement (avant pour blanc, arrière pour noir)
+                int direction = isPlayerWhite ? 1 : -1;
+
+                // La case devant la position actuelle est une case à la même position X et Y, mais une position Z décalée de 1
+                Vector3 checkPosition = new Vector3(currentPosition.x, currentPosition.y, currentPosition.z + direction);
+
+                // Vérifie si la case de devant est occupée
+                Collider[] colliders = Physics.OverlapSphere(checkPosition, 0.1f);
+                foreach (Collider collider in colliders)
+                {
+                    PieceController piece = collider.GetComponent<PieceController>();
+                    if (piece != null)
+                    {
+                        // Si une pièce est trouvée, on retourne false (le chemin est bloqué)
+                        return false;
+                    }
+                }
+            }
+
+            // Si la case devant est libre, retourne true
+            return true;
+        }
+
+        if (currentPosition.x == targetPosition.x)
+        {
+            int direction = isPlayerWhite ? 1 : -1;
+
+            // On vérifie chaque case entre la position actuelle et la position cible
+            for (float z = currentPosition.z + direction; z != targetPosition.z + direction; z += direction)
+            {
+                Vector3 checkPosition = new Vector3(currentPosition.x, currentPosition.y, z);
+
+                Collider[] colliders = Physics.OverlapSphere(checkPosition, 0.1f);
+                bool isOccupied = false;
+                foreach (Collider collider in colliders)
+                {
+                    PieceController piece = collider.GetComponent<PieceController>();
+
+                    // Affichage pour débogage
+                    Debug.Log("Vérification pièce : " + piece);
+                    if (piece != null)
+                    {
+                        isOccupied = true;
+                        Debug.Log("Case occupée par une pièce : " + piece.gameObject.name);
+                        break; // On sort dès qu'une pièce est détectée
+                    }
+                }
+
+                // Si la case est occupée, le chemin est bloqué
+                if (isOccupied)
+                {
+                    Debug.Log("Chemin bloqué à : " + checkPosition);
+                    return false;
+                }
+            }
+        }
+        return true; // Le chemin est libre
+    }
+
+
+
+
 
     // Déplace le pion vers la position cible
     void MovePawn()
     {
+        Vector3 oldPosition = transform.position; // Sauvegarde la position actuelle
+
         transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
 
-        // Si le pion atteint la position cible, arrêter le mouvement
         if (Vector3.Distance(transform.position, targetPosition) < 0.01f)
         {
             isMoving = false;
             Debug.Log(gameObject.name + " a atteint sa destination.");
 
-            // Capturer la pièce ennemie si présente
-            Collider[] colliders = Physics.OverlapSphere(targetPosition, 0.1f);
-            foreach (Collider collider in colliders)
+            if (pieceToCapture != null)
             {
-                PieceController piece = collider.GetComponent<PieceController>();
-                if (piece != null && piece.isPlayerWhite != this.isPlayerWhite) // Pièce ennemie
-                {
-                    // Détruire la pièce ennemie
-                    Destroy(piece.gameObject);
-                    Debug.Log("Pièce ennemie capturée.");
-                }
+                Debug.Log("Destruction de : " + pieceToCapture.gameObject.name);
+                Destroy(pieceToCapture.gameObject); // Supprime le pion ennemi capturé
+                pieceToCapture = null;
             }
 
+            ClearOldPosition(oldPosition); // Nettoie l'ancienne position après capture
+
             DeselectPawn();
+            GameManager.SwitchTurn();
         }
     }
+
+
+    // Nettoyer l'ancienne position du pion (on peut la marquer comme libre)
+    void ClearOldPosition(Vector3 oldPosition)
+    {
+        Collider[] colliders = Physics.OverlapSphere(oldPosition, 0.1f);
+        foreach (Collider collider in colliders)
+        {
+            PieceController piece = collider.GetComponent<PieceController>();
+            if (piece != null && piece.gameObject != this.gameObject)
+            {
+                Destroy(piece.gameObject);
+                Debug.Log("Ancienne position nettoyée : " + oldPosition);
+            }
+        }
+    }
+
 
     // Méthode appelée lors du clic sur le pion
     public void OnPawnClicked()
@@ -155,3 +272,5 @@ public class PawnController : PieceController
         Debug.Log(gameObject.name + " a été désélectionné.");
     }
 }
+
+

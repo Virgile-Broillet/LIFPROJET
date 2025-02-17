@@ -6,6 +6,8 @@ public class RookController : PieceController // Hérite de PieceController
     private bool isSelected = false; // État de sélection
     private Vector3 targetPosition; // Position de destination
     private bool isMoving = false; // Si la tour est en train de se déplacer
+    private PieceController pieceToCapture = null; // Pièce à capturer
+
 
     private void Update()
     {
@@ -106,65 +108,82 @@ public class RookController : PieceController // Hérite de PieceController
     }
 
     // Vérifie si le chemin entre la position actuelle et la position cible est dégagé
-    bool IsPathClear(Vector3 currentPosition, Vector3 targetPosition)
+   bool IsPathClear(Vector3 currentPosition, Vector3 targetPosition)
     {
-        // Vérifie si le déplacement est horizontal (X change)
-        if (currentPosition.x != targetPosition.x)
+        int currentX = Mathf.RoundToInt(currentPosition.x);
+        int currentZ = Mathf.RoundToInt(currentPosition.z);
+        int targetX = Mathf.RoundToInt(targetPosition.x);
+        int targetZ = Mathf.RoundToInt(targetPosition.z);
+
+        // Vérifie que le mouvement est horizontal ou vertical (pas diagonal)
+        if (currentX != targetX && currentZ != targetZ)
         {
-            float minX = Mathf.Min(currentPosition.x, targetPosition.x);
-            float maxX = Mathf.Max(currentPosition.x, targetPosition.x);
+            return false; // Si le déplacement n'est pas horizontal ou vertical, c'est invalide
+        }
 
-            // Vérifie chaque case intermédiaire sur le chemin horizontal
-            for (float x = minX + 1; x < maxX; x++)
+        // Si le mouvement est horizontal (X change)
+        if (currentZ == targetZ)
+        {
+            // Détermine la direction du mouvement (X)
+            int dx = (targetX > currentX) ? 1 : -1;
+            int x = currentX + dx;
+
+            // Parcourt chaque case entre la position actuelle et la position cible sur l'axe X
+            while (x != targetX)
             {
-                Vector3 checkPosition = new Vector3(x, currentPosition.y, currentPosition.z);
-                Collider[] colliders = Physics.OverlapSphere(checkPosition, 0.1f);
+                Vector3 checkPosition = new Vector3(x, currentPosition.y, currentZ);
+                Collider[] colliders = Physics.OverlapSphere(checkPosition, 0.3f); // Rayon de 0.3 pour vérifier les collisions
 
-                // Si une pièce est présente sur cette case, le déplacement est invalide
                 foreach (Collider collider in colliders)
                 {
-                    PieceController piece = collider.GetComponent<PieceController>();
-                    if (piece != null)
+                    if (collider.TryGetComponent(out PieceController piece))
                     {
-                        // Si la pièce est de la même couleur, le déplacement est invalide
-                        if (piece.isPlayerWhite == this.isPlayerWhite)
-                        {
-                            return false; // Il y a une pièce alliée sur la trajectoire
-                        }
+                        return false; // Si une pièce est présente sur le chemin, retournez false
                     }
                 }
+
+                x += dx; // Avance à la prochaine case sur l'axe X
             }
         }
-        // Vérifie si le déplacement est vertical (Z change)
-        else if (currentPosition.z != targetPosition.z)
+        // Si le mouvement est vertical (Z change)
+        else if (currentX == targetX)
         {
-            float minZ = Mathf.Min(currentPosition.z, targetPosition.z);
-            float maxZ = Mathf.Max(currentPosition.z, targetPosition.z);
+            // Détermine la direction du mouvement (Z)
+            int dz = (targetZ > currentZ) ? 1 : -1;
+            int z = currentZ + dz;
 
-            // Vérifie chaque case intermédiaire sur le chemin vertical
-            for (float z = minZ + 1; z < maxZ; z++)
+            // Parcourt chaque case entre la position actuelle et la position cible sur l'axe Z
+            while (z != targetZ)
             {
-                Vector3 checkPosition = new Vector3(currentPosition.x, currentPosition.y, z);
-                Collider[] colliders = Physics.OverlapSphere(checkPosition, 0.1f);
+                Vector3 checkPosition = new Vector3(currentX, currentPosition.y, z);
+                Collider[] colliders = Physics.OverlapSphere(checkPosition, 0.3f); // Rayon de 0.3 pour vérifier les collisions
 
-                // Si une pièce est présente sur cette case, le déplacement est invalide
                 foreach (Collider collider in colliders)
                 {
-                    PieceController piece = collider.GetComponent<PieceController>();
-                    if (piece != null)
+                    if (collider.TryGetComponent(out PieceController piece))
                     {
-                        // Si la pièce est de la même couleur, le déplacement est invalide
-                        if (piece.isPlayerWhite == this.isPlayerWhite)
-                        {
-                            return false; // Il y a une pièce alliée sur la trajectoire
-                        }
+                        return false; // Si une pièce est présente sur le chemin, retournez false
                     }
                 }
+
+                z += dz; // Avance à la prochaine case sur l'axe Z
+            }
+        }
+
+        // Vérifie la dernière case (cible) pour une capture éventuelle
+        Collider[] finalColliders = Physics.OverlapSphere(targetPosition, 0.3f);
+        foreach (Collider collider in finalColliders)
+        {
+            PieceController piece = collider.GetComponent<PieceController>();
+            if (piece != null && piece.isPlayerWhite == this.isPlayerWhite)
+            {
+                return false; // Impossible d'atterrir sur une pièce alliée
             }
         }
 
         return true; // Le chemin est dégagé
     }
+
 
     // Déplace la tour vers la position cible
     void MoveRook()
@@ -178,15 +197,17 @@ public class RookController : PieceController // Hérite de PieceController
             Debug.Log(gameObject.name + " a atteint sa destination.");
 
             // Si la case d'arrivée est occupée par une pièce ennemie, la capturer
-            Collider[] colliders = Physics.OverlapSphere(targetPosition, 0.1f);
+            Collider[] colliders = Physics.OverlapSphere(targetPosition, 0.3f);
             foreach (Collider collider in colliders)
             {
                 PieceController piece = collider.GetComponent<PieceController>();
                 if (piece != null && piece.isPlayerWhite != this.isPlayerWhite)
                 {
                     // Capture la pièce ennemie
+                    pieceToCapture = piece;
+                    Debug.Log("Pièce ennemie détectée pour capture : " + piece.gameObject.name);
                     Destroy(piece.gameObject);
-                    Debug.Log("Pièce ennemie capturée.");
+                    break;
                 }
             }
             DeselectRook();

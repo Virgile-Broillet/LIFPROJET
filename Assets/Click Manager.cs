@@ -27,18 +27,16 @@ public class ClickManager : MonoBehaviour
                     Debug.Log("Tour cliquée, appel du script de mouvement.");
                     rook.OnRookClicked(); // Appeler la méthode de la tour
                 }
-                /*
-                else if (hit.collider.TryGetComponent(out KnightController knight))
-                {
-                    Debug.Log("Cavalier cliqué, appel du script de mouvement.");
-                    knight.OnKnightClicked(); // Appeler la méthode du cavalier
-                }
                 else if (hit.collider.TryGetComponent(out BishopController bishop))
                 {
                     Debug.Log("Fou cliqué, appel du script de mouvement.");
                     bishop.OnBishopClicked(); // Appeler la méthode du fou
                 }
-                */
+                else if (hit.collider.TryGetComponent(out KnightController knight))
+                {
+                    Debug.Log("Cavalier cliqué, appel du script de mouvement.");
+                    knight.OnKnightClicked(); // Appeler la méthode du cavalier
+                }
                 else
                 {
                     Debug.Log("Aucune pièce ou pièce inconnue détectée.");
