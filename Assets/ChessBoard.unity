@@ -339,21 +339,6 @@ MonoBehaviour:
   clickableLayers:
     serializedVersion: 2
     m_Bits: 64
---- !u!114 &240021602
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 240021592}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8e63d48bbac347a398dd6ad36d4b928, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainCamera: {fileID: 0}
-  rotationSpeed: 5
-  positionSpeed: 2
 --- !u!1001 &341390316
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -728,6 +713,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 130826, guid: 861e95a585868b643bf2e4a1d0ae63b7, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1125532325}
+    - targetCorrespondingSourceObject: {fileID: 130826, guid: 861e95a585868b643bf2e4a1d0ae63b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1125532326}
   m_SourcePrefab: {fileID: 100100000, guid: 861e95a585868b643bf2e4a1d0ae63b7, type: 3}
 --- !u!1001 &744509672
 PrefabInstance:
@@ -788,9 +776,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5401803245104042640, guid: e969f172561534fc285042bc26a78864, type: 3}
       insertIndex: -1
       addedObject: {fileID: 240021597}
-    - targetCorrespondingSourceObject: {fileID: 5401803245104042640, guid: e969f172561534fc285042bc26a78864, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 240021602}
   m_SourcePrefab: {fileID: 100100000, guid: e969f172561534fc285042bc26a78864, type: 3}
 --- !u!1 &749726902 stripped
 GameObject:
@@ -810,6 +795,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPlayerWhite: 1
+--- !u!114 &749726908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 749726902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 723abdef065604e89abf2c19cf046fae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isPlayerWhite: 1
+  moveSpeed: 5
 --- !u!1001 &868543647
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1080,6 +1079,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPlayerWhite: 0
+--- !u!114 &1125532326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1125532320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 723abdef065604e89abf2c19cf046fae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isPlayerWhite: 0
+  moveSpeed: 5
 --- !u!1001 &1141284035
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1429,6 +1442,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 119820, guid: 9e4e635002b6a524ca896adb28e8e388, type: 3}
       insertIndex: -1
       addedObject: {fileID: 749726907}
+    - targetCorrespondingSourceObject: {fileID: 119820, guid: 9e4e635002b6a524ca896adb28e8e388, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 749726908}
   m_SourcePrefab: {fileID: 100100000, guid: 9e4e635002b6a524ca896adb28e8e388, type: 3}
 --- !u!1 &1405408803 stripped
 GameObject:
@@ -1925,7 +1941,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 2019805695}
-  rotationSpeed: 1
+  rotationSpeed: 5
   positionSpeed: 2
 --- !u!1001 &2043062893
 PrefabInstance:

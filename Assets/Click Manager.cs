@@ -37,6 +37,11 @@ public class ClickManager : MonoBehaviour
                     Debug.Log("Cavalier cliqué, appel du script de mouvement.");
                     knight.OnKnightClicked(); // Appeler la méthode du cavalier
                 }
+                else if (hit.collider.TryGetComponent(out KingController king))
+                {
+                    Debug.Log("Roi cliqué, appel du script de mouvement.");
+                    king.OnKingClicked();
+                }
                 else
                 {
                     Debug.Log("Aucune pièce ou pièce inconnue détectée.");
